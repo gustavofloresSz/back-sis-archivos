@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
-import { AgenteModule } from './modules/agente/agente.module';
 import { TareasModule } from './modules/tareas/tareas.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RolModule } from './modules/usuarios/rol/rol.module';
@@ -11,7 +10,6 @@ import { PermisoModule } from './modules/usuarios/permiso/permiso.module';
 import { GestionTramitesModule } from './modules/gestion-tramites/gestion-tramites.module';
 import { OrganizacionModule } from './modules/organizacion/organizacion.module';
 import { ControlFisicoModule } from './modules/control-fisico/control-fisico.module';
-import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 
 
 @Module({
@@ -34,13 +32,11 @@ import { AuditoriaModule } from './modules/auditoria/auditoria.module';
     }),
     AuthModule,
     UsuariosModule,
-    AgenteModule,
     RolModule,
     PermisoModule,
     GestionTramitesModule,
     OrganizacionModule,
     ControlFisicoModule,
-    AuditoriaModule,
     
   ],
   controllers: [],

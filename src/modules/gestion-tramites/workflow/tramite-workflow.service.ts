@@ -12,7 +12,6 @@ import {
 } from '../../usuarios/policies/acceso-institucional.policy';
 import { EstadoTramite } from '../catalogos/estado-tramite/entities/estado_tramite.entity';
 import {
-  DocumentosVerificados,
   HistorialEstadoTramite,
 } from './historial-estado/entities/historial_estado_tramite.entity';
 import { CambiarEstadoTramiteDto } from '../tramite/dto/cambiar-estado-tramite.dto';
@@ -37,7 +36,6 @@ interface RegistrarHistorialParams {
   estadoAnteriorId: number | null;
   estadoNuevoId: number;
   motivo: string;
-  documentosVerificados?: DocumentosVerificados | null;
 }
 
 @Injectable()
@@ -121,7 +119,6 @@ export class TramiteWorkflowService {
     tramiteId: number,
     dto: CambiarEstadoTramiteDto,
     usuario: Usuario,
-    omitirVerificacionDocumental = false,
   ): Promise<void> {
     const tramite = await this.buscarTramiteConEstadoActual(
       tramiteId,
@@ -163,13 +160,6 @@ export class TramiteWorkflowService {
       );
     }
 
-    const documentosVerificados = this.obtenerDocumentosVerificados(
-      nombreEstadoActual,
-      nombreEstadoNuevo,
-      dto.documentos_verificados,
-      omitirVerificacionDocumental,
-    );
-
     await this.tramiteRepository.update(
       { id: tramite.id },
       {
@@ -188,7 +178,6 @@ export class TramiteWorkflowService {
       estadoAnteriorId: estadoActual.id,
       estadoNuevoId: estadoNuevo.id,
       motivo: dto.motivo,
-      documentosVerificados,
     });
   }
 
@@ -442,36 +431,10 @@ export class TramiteWorkflowService {
       estado_anterior_id: params.estadoAnteriorId,
       estado_nuevo_id: params.estadoNuevoId,
       motivo: params.motivo?.trim().toUpperCase(),
-      documentos_verificados: params.documentosVerificados ?? null,
+      documentos_verificados: null,
     });
 
     return this.historialRepository.save(historial);
-  }
-
-  private obtenerDocumentosVerificados(
-    estadoActual: EstadoTramiteWorkflow,
-    estadoNuevo: EstadoTramiteWorkflow,
-    documentos?: DocumentosVerificados,
-    omitirVerificacion = false,
-  ): DocumentosVerificados | null {
-    const requiereVerificacion =
-      estadoNuevo === EstadoTramiteWorkflow.CONCLUIDO &&
-      !omitirVerificacion;
-
-    if (!requiereVerificacion) {
-      return null;
-    }
-
-    if (documentos?.PLANO !== true || documentos?.RTA !== true) {
-      throw new BadRequestException(
-        'Para concluir el trámite debe verificar el Plano y la Resolución Técnica Administrativa (RTA)',
-      );
-    }
-
-    return {
-      PLANO: true,
-      RTA: true,
-    };
   }
 
   private obtenerObservacionVigentePorEstado(

@@ -6,9 +6,6 @@
 #upload folder
 uploads/
 
-# Generated daily audit files
-audit-logs/
-
 # Local source data for one-off imports
 /scripts/**/*.xlsx
 

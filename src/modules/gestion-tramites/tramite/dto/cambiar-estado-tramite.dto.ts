@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
-import {IsBoolean,IsInt,IsObject,IsOptional,IsString,Min,MinLength,} from 'class-validator';
-import type { DocumentosVerificados } from '../../workflow/historial-estado/entities/historial_estado_tramite.entity';
+import {IsBoolean,IsInt,IsOptional,IsString,Min,MinLength,} from 'class-validator';
 
 export class CambiarEstadoTramiteDto {
   @Type(() => Number)
@@ -16,7 +15,4 @@ export class CambiarEstadoTramiteDto {
   @IsBoolean()
   es_correccion_administrativa?: boolean;
 
-  @IsOptional()
-  @IsObject()
-  documentos_verificados?: DocumentosVerificados;
 }

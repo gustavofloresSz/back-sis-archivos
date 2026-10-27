@@ -228,7 +228,6 @@ export class TramitesService {
           es_correccion_administrativa: false,
         },
         usuario,
-        true,
       );
     }
 
@@ -473,13 +472,11 @@ export class TramitesService {
     tramiteId: number,
     dto: CambiarEstadoTramiteDto,
     usuario: Usuario,
-    omitirVerificacionDocumental = false,
   ) {
     await this.tramiteWorkflowService.cambiarEstado(
       tramiteId,
       dto,
       usuario,
-      omitirVerificacionDocumental,
     );
 
     return this.findOne(tramiteId, usuario);
@@ -663,7 +660,6 @@ export class TramitesService {
         estado_nuevo_id: dto.estado_nuevo_id,
         motivo: dto.motivo,
         es_correccion_administrativa: dto.es_correccion_administrativa,
-        documentos_verificados: dto.documentos_verificados,
       },
       usuario,
     );

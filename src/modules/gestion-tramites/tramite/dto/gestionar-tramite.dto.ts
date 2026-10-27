@@ -2,13 +2,11 @@ import { Transform, TransformFnParams, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
-  IsObject,
   IsOptional,
   IsString,
   Min,
   MinLength,
 } from 'class-validator';
-import type { DocumentosVerificados } from '../../workflow/historial-estado/entities/historial_estado_tramite.entity';
 
 const transformarBooleanoFormulario = ({
   value,
@@ -19,16 +17,6 @@ const transformarBooleanoFormulario = ({
   if (valor === 'false') return false;
 
   return valor;
-};
-
-const transformarJsonFormulario = ({ value }: TransformFnParams): unknown => {
-  if (typeof value !== 'string') return value;
-
-  try {
-    return JSON.parse(value) as unknown;
-  } catch {
-    return value;
-  }
 };
 
 export class GestionarTramiteDto {
@@ -46,8 +34,4 @@ export class GestionarTramiteDto {
   @IsBoolean()
   es_correccion_administrativa?: boolean;
 
-  @IsOptional()
-  @Transform(transformarJsonFormulario)
-  @IsObject()
-  documentos_verificados?: DocumentosVerificados;
 }

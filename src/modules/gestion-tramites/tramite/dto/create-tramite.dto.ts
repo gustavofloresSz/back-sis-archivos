@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,
   IsInt,
@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -38,6 +39,25 @@ export class CreateTramiteDto {
   @IsOptional()
   @IsString()
   distrito?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  manzano?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  lote?: string | null;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    return value.trim() ? Number(value) : null;
+  })
+  @IsNumber()
+  @Min(0)
+  superficie?: number | null;
 
   @IsOptional()
   @Type(() => Number)

@@ -1,11 +1,17 @@
 import { Tramite } from '../../../tramite/entities/tramite.entity';
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ArchivoEstado } from '../enums/archivo-estado.enum';
+import { TipoSello } from '../enums/tipo-sello.enum';
 
 @Entity()
+@Index('IDX_archivo_codigo', ['codigo'])
+@Index('UQ_archivo_codigo_original', ['codigo'], { unique: true, where: 'NOT es_sellado' })
 export class Archivo {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: 'uuid', nullable: true })
+  codigo: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   nombre: string;
@@ -32,6 +38,9 @@ export class Archivo {
 
   @Column({ type: 'boolean', default: false })
   es_sellado: boolean;
+
+  @Column({ type: 'enum', enum: TipoSello, enumName: 'tipo_sello', array: true, nullable: true })
+  tipos_sello: TipoSello[] | null;
   
   @CreateDateColumn({ name: 'fecha_registro' })
   fecha_registro: Date;

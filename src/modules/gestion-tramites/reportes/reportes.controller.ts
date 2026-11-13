@@ -7,48 +7,63 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { PermissionProtected, UserRequest } from '../../auth/decorators';
-import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { PermissionProtected } from '../../auth/decorators';
 import { RecursoPermiso } from '../../usuarios/permiso/enums/recurso-permiso.enum';
 import { ReportesService } from './reportes.service';
-import { ResumenWorkflowService } from './services/resumen-workflow.service';
-import { FiltrosResumenWorkflowDto } from './dto/filtros-resumen-workflow.dto';
+import { BuscarReportesDto } from './dto/buscar-reportes.dto';
+import { enviarArchivo } from '../documentos/archivo/archivo-respuesta';
 
 @Controller('reportes')
 export class ReportesController {
   constructor(
     private readonly reportesService: ReportesService,
-    private readonly resumenWorkflowService: ResumenWorkflowService,
   ) {}
 
-  @Get('tramites/resumen-workflow')
+  @Get('instituciones')
   @PermissionProtected({ recurso: RecursoPermiso.TRAMITE, accion: 'ver' })
-  obtenerResumenWorkflow(
-    @Query() filtros: FiltrosResumenWorkflowDto,
-    @UserRequest() currentUser: Usuario,
-  ) {
-    return this.resumenWorkflowService.obtenerResumen(currentUser, filtros);
+  obtenerInstituciones() {
+    return this.reportesService.obtenerInstituciones();
   }
 
-  @Get('tramites/:id/pdf')
-  @PermissionProtected({ recurso: RecursoPermiso.REPORTE_TRAMITE, accion: 'generar' })
-  async generarReporteTramite(
+  @Get('tramites')
+  @PermissionProtected({ recurso: RecursoPermiso.TRAMITE, accion: 'ver' })
+  buscarTramites(@Query() filtros: BuscarReportesDto) {
+    return this.reportesService.buscarTramites(filtros);
+  }
+
+  @Get('tramites/:id')
+  @PermissionProtected({ recurso: RecursoPermiso.TRAMITE, accion: 'ver' })
+  obtenerTramite(@Param('id', ParseIntPipe) id: number) {
+    return this.reportesService.obtenerTramite(id);
+  }
+
+  @Get('tramites/:id/archivos/:archivoId')
+  @PermissionProtected(
+    { recurso: RecursoPermiso.TRAMITE, accion: 'ver' },
+    { recurso: RecursoPermiso.ARCHIVO, accion: 'ver' },
+  )
+  async verArchivo(
     @Param('id', ParseIntPipe) id: number,
-    @UserRequest() currentUser: Usuario,
+    @Param('archivoId', ParseIntPipe) archivoId: number,
     @Res() response: Response,
   ) {
-    const reporte = await this.reportesService.generarReporteTramite(
-      id,
-      currentUser,
-    );
-
-    response.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${reporte.nombreArchivo}"`,
-      'Content-Length': reporte.pdf.length,
-      'Cache-Control': 'private, no-store',
-    });
-
-    return response.end(reporte.pdf);
+    const archivo = await this.reportesService.obtenerArchivo(id, archivoId);
+    return enviarArchivo(response, archivo);
   }
+
+  @Get('tramites/:id/archivos/:archivoId/descargar')
+  @PermissionProtected(
+    { recurso: RecursoPermiso.TRAMITE, accion: 'ver' },
+    { recurso: RecursoPermiso.ARCHIVO, accion: 'ver' },
+    { recurso: RecursoPermiso.ARCHIVO, accion: 'descargar' },
+  )
+  async descargarArchivo(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('archivoId', ParseIntPipe) archivoId: number,
+    @Res() response: Response,
+  ) {
+    const archivo = await this.reportesService.obtenerArchivo(id, archivoId);
+    return enviarArchivo(response, archivo, true);
+  }
+
 }

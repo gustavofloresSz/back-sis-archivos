@@ -11,8 +11,10 @@ import { UpdateTramiteDto } from './dto/update-tramite.dto';
 import { Tramite } from './entities/tramite.entity';
 import { TipoTramite } from '../catalogos/tipo-tramite/entities/tipo_tramite.entity';
 import { ClasificacionTramite } from '../catalogos/clasificacion-tramite/entities/clasificacion_tramite.entity';
+import { esUrbanizacion } from '../catalogos/clasificacion-tramite/es-urbanizacion';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { ArchivoService, UploadedFileType } from '../documentos/archivo/archivo.service';
+import { ArchivoEstado } from '../documentos/archivo/enums/archivo-estado.enum';
 import { ComprobantePagoService } from '../documentos/comprobante-pago/comprobante_pago.service';
 import { PaginationTramitesDto } from './dto/pagination-tramites.dto';
 import { UbicacionFisica } from '../../control-fisico/ubicacion-fisica/entities/ubicacion-fisica.entity';
@@ -28,6 +30,7 @@ import {
   validarOperacionPermitida,
 } from '../../usuarios/policies/acceso-institucional.policy';
 import { RecursoPermiso } from '../../usuarios/permiso/enums/recurso-permiso.enum';
+import { MovimientoFisico, TipoMovimientoFisico } from '../../control-fisico/movimiento_fisico/entities/movimiento_fisico.entity';
 
 @Injectable()
 export class TramitesService {
@@ -156,7 +159,10 @@ export class TramitesService {
       );
     }
 
-    const datosTramite = this.construirDatosParaCrearTramite(dto);
+    const datosTramite = {
+      ...this.construirDatosParaCrearTramite(dto),
+      ...this.datosUrbanizacion(dto, clasificacion.nombre),
+    };
 
     const tramiteGuardado = await this.tramiteRepository.manager.transaction(
       async (manager) => {
@@ -311,6 +317,7 @@ export class TramitesService {
       if (!clasificacion) {
         throw new BadRequestException('Clasificación de trámite no encontrada');
       }
+      tramite.clasificacion_tramite = clasificacion;
     }
 
     if (dto.ubicacion_fisica_id) {
@@ -322,6 +329,10 @@ export class TramitesService {
     }
 
     const datosActualizacion = this.construirDatosParaActualizarTramite(dto);
+    const urbanizacion = this.datosUrbanizacion(dto, tramite.clasificacion_tramite?.nombre);
+    this.asignarSiExiste(datosActualizacion, 'manzano', urbanizacion.manzano);
+    this.asignarSiExiste(datosActualizacion, 'lote', urbanizacion.lote);
+    this.asignarSiExiste(datosActualizacion, 'superficie', urbanizacion.superficie);
 
     Object.assign(tramite, datosActualizacion);
 
@@ -400,7 +411,34 @@ export class TramitesService {
       });
     }
 
-    const [data, total] = await query.getManyAndCount();
+    const [tramites, total] = await query.getManyAndCount();
+    const tramiteIds = tramites
+      .filter((tramite) => tramite.ubicacion_fisica_id !== null)
+      .map((tramite) => tramite.id);
+    const ultimosMovimientos = tramiteIds.length
+      ? await this.tramiteRepository.manager
+          .getRepository(MovimientoFisico)
+          .createQueryBuilder('movimiento')
+          .select('movimiento.tramite_id', 'tramite_id')
+          .addSelect('movimiento.tipo_movimiento', 'tipo_movimiento')
+          .distinctOn(['movimiento.tramite_id'])
+          .where('movimiento.tramite_id IN (:...tramiteIds)', { tramiteIds })
+          .orderBy('movimiento.tramite_id', 'ASC')
+          .addOrderBy('movimiento.fecha_movimiento', 'DESC')
+          .addOrderBy('movimiento.id', 'DESC')
+          .getRawMany<{ tramite_id: number; tipo_movimiento: TipoMovimientoFisico }>()
+      : [];
+    const movimientosPorTramite = new Map(
+      ultimosMovimientos.map((movimiento) => [movimiento.tramite_id, movimiento.tipo_movimiento]),
+    );
+    const data = tramites.map((tramite) => ({
+      ...tramite,
+      estado_fisico: !tramite.ubicacion_fisica_id
+        ? 'SIN_ASIGNAR'
+        : movimientosPorTramite.get(tramite.id) === TipoMovimientoFisico.RETIRO
+          ? 'RETIRADO'
+          : 'EN_ARCHIVO',
+    }));
 
     const totalPages = Math.ceil(total / limit);
 
@@ -418,7 +456,14 @@ export class TramitesService {
   }
 
   async findOne(id: number, currentUser: Usuario) {
-    const institucionId = obtenerInstitucionRestringida(currentUser);
+    return this.buscarDetalle(id, obtenerInstitucionRestringida(currentUser));
+  }
+
+  async findOneParaReporte(id: number) {
+    return this.buscarDetalle(id, null);
+  }
+
+  private async buscarDetalle(id: number, institucionId: number | null) {
     const tramite = await this.tramiteRepository.findOne({
       where:
         institucionId === null
@@ -455,6 +500,9 @@ export class TramitesService {
       throw new NotFoundException('Trámite no encontrado');
     }
 
+    tramite.archivos = (tramite.archivos ?? []).filter(
+      (archivo) => archivo.estado === ArchivoEstado.ACTIVO,
+    );
     return tramite;
   }
   async remove(id: number, currentUser: Usuario) {
@@ -557,6 +605,20 @@ export class TramitesService {
         permiso.recurso === RecursoPermiso.ARCHIVO &&
         (permiso.accion === accion || permiso.accion === 'gestionar'),
     );
+  }
+
+  private datosUrbanizacion(
+    dto: Pick<CreateTramiteDto, 'manzano' | 'lote' | 'superficie'>,
+    clasificacion: string | undefined,
+  ): Partial<Tramite> {
+    if (!esUrbanizacion(clasificacion)) {
+      return { manzano: null, lote: null, superficie: null };
+    }
+    return {
+      manzano: dto.manzano === undefined ? undefined : dto.manzano?.trim() || null,
+      lote: dto.lote === undefined ? undefined : dto.lote?.trim() || null,
+      superficie: dto.superficie,
+    };
   }
 
   private construirDatosParaCrearTramite(

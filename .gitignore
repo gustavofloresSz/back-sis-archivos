@@ -6,8 +6,18 @@
 #upload folder
 uploads/
 
-# Local source data for one-off imports
+# Copias locales de datos y documentos antes de limpiezas
+/.backups/
+
+# Datos y scripts de operación local. Los scripts ya versionados siguen en Git.
+/scripts/catalogos/
+/scripts/importaciones/
+/scripts/actualizar-nombres-instituciones.sql
+/scripts/ajustar-roles-y-control-fisico.js
+/scripts/limpiar-tramites.js
+/scripts/registrar-equipo-tecnico.js
 /scripts/**/*.xlsx
+/scripts/**/*.xls
 
 # Logs
 logs
@@ -43,14 +53,13 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+!.env.example
 
 # temp directory
-.temp
-.tmp
+/.temp/
+.tmp/
+/temp/
 
 # Runtime data
 pids

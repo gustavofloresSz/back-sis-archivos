@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Delete, ParseIntPipe, Res } from '@nestjs/common';
 import { ArchivoService } from './archivo.service';
+import { enviarArchivo } from './archivo-respuesta';
 import { Response } from 'express'; 
 import { PermissionProtected, UserRequest } from '../../../auth/decorators';
 import { Usuario } from '../../../usuarios/entities/usuario.entity';
@@ -25,8 +26,7 @@ export class ArchivoController {
     @Res() res: Response,
   ) {
     const archivo = await this.archivoService.findOne(id, currentUser);
-    const filePath = this.archivoService.resolverRutaFisica(archivo);
-    return res.sendFile(filePath);
+    return enviarArchivo(res, await this.archivoService.prepararEntrega(archivo));
   }
 
   @Get('descargar/:id')
@@ -40,8 +40,7 @@ export class ArchivoController {
     @Res() res: Response,
   ) {
     const archivo = await this.archivoService.findOne(id, currentUser);
-    const filePath = this.archivoService.resolverRutaFisica(archivo);
-    return res.download(filePath, archivo.nombre_original);
+    return enviarArchivo(res, await this.archivoService.prepararEntrega(archivo), true);
   }
 
   @Delete(':id')

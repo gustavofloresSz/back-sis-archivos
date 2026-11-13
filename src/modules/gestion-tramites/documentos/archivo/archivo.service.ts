@@ -1,8 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { mkdir, rename } from 'node:fs/promises';
-import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename } from 'node:fs/promises';
+import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { PDFDocument } from 'pdf-lib';
+import { dibujarCodigoArchivo } from './pdf/codigo-archivo';
 
 import { Archivo } from './entities/archivo.entity';
 import { Tramite } from '../../tramite/entities/tramite.entity';
@@ -21,6 +24,8 @@ export type UploadedFileType = {
 
 @Injectable()
 export class ArchivoService {
+  private readonly logger = new Logger(ArchivoService.name);
+
   constructor(
     @InjectRepository(Archivo)
     private readonly archivoRepository: Repository<Archivo>,
@@ -29,6 +34,7 @@ export class ArchivoService {
   async crearPendiente(file: UploadedFileType) {
     const archivo = this.archivoRepository.create({
       nombre: file.filename,
+      codigo: randomUUID(),
       nombre_original: file.originalname,
       ruta: file.path ?? `uploads/${file.filename}`,
       tramite_id: null,
@@ -46,6 +52,7 @@ export class ArchivoService {
     const archivos = files.map((file) =>
       this.archivoRepository.create({
         nombre: file.filename,
+        codigo: randomUUID(),
         nombre_original: file.originalname,
         ruta: file.path ?? `uploads/${file.filename}`,
         tramite_id: null,
@@ -127,6 +134,28 @@ export class ArchivoService {
     return relative(process.cwd(), rutaAbsoluta).split(sep).join('/');
   }
 
+  async prepararEntrega(archivo: Archivo) {
+    const ruta = this.resolverRutaFisica(archivo);
+    const nombre = archivo.nombre_original;
+    if (!archivo.codigo || archivo.es_sellado || extname(nombre).toLowerCase() !== '.pdf') {
+      return { ruta, nombre };
+    }
+
+    // El código se dibuja en una copia de entrega. Los bytes subidos quedan intactos.
+    const original = await readFile(ruta).catch((error) => {
+      if (error?.code === 'ENOENT') throw new NotFoundException('El archivo no existe en el almacenamiento');
+      throw error;
+    });
+    try {
+      const documento = await PDFDocument.load(original);
+      await dibujarCodigoArchivo(documento, archivo.codigo);
+      return { ruta, nombre, pdf: Buffer.from(await documento.save()) };
+    } catch {
+      this.logger.warn(`No se pudo imprimir el código en el PDF del archivo ${archivo.id}`);
+      return { ruta, nombre };
+    }
+  }
+
   async marcarComoHuerfano(archivoId: number, currentUser: Usuario) {
     validarOperacionPermitida(currentUser);
     const archivo = await this.buscarArchivoInstitucional(
@@ -139,6 +168,8 @@ export class ArchivoService {
     }
 
     archivo.tramite_id = null;
+    // La relación cargada también debe quitarse para que save no restaure el vínculo.
+    archivo.tramite = null;
     archivo.estado = ArchivoEstado.HUERFANO;
 
     return await this.archivoRepository.save(archivo);
@@ -163,8 +194,9 @@ export class ArchivoService {
     return await this.archivoRepository.find({
       where:
         institucionId === null
-          ? {}
+          ? { estado: ArchivoEstado.ACTIVO }
           : {
+              estado: ArchivoEstado.ACTIVO,
               tramite: {
                 usuario_registro: { institucion_id: institucionId },
               },
@@ -200,9 +232,10 @@ export class ArchivoService {
     return this.archivoRepository.findOne({
       where:
         institucionId === null
-          ? { id: archivoId }
+          ? { id: archivoId, estado: ArchivoEstado.ACTIVO }
           : {
               id: archivoId,
+              estado: ArchivoEstado.ACTIVO,
               tramite: {
                 usuario_registro: { institucion_id: institucionId },
               },

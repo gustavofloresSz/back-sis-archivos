@@ -41,6 +41,15 @@ export class Tramite {
   @Column({ type: 'varchar', length: 100, nullable: true })
   distrito: string | null;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  manzano: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  lote: string | null;
+
+  @Column({ type: 'decimal', nullable: true })
+  superficie: number | null;
+
   @Column({ type: 'decimal', nullable: true })
   sup_avance: number | null;
 

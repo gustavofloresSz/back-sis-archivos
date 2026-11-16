@@ -84,7 +84,12 @@ export class ReportesService {
     if (filtros.fecha_hasta) {
       query.andWhere("tramite.fecha_registro < CAST(:fechaHasta AS date) + INTERVAL '1 day'", { fechaHasta: filtros.fecha_hasta });
     }
-    const [data, total] = await query.orderBy('tramite.id', 'DESC')
+    const [data, total] = await query
+      .orderBy('tipo_tramite.segmento', 'ASC')
+      .addOrderBy('institucion.sigla', 'ASC')
+      .addOrderBy('tramite.gestion', 'ASC')
+      .addOrderBy('tramite.num_tramite', 'ASC')
+      .addOrderBy('tramite.id', 'ASC')
       .skip((page - 1) * limit).take(limit).getManyAndCount();
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }

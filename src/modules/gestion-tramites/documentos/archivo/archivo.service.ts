@@ -6,6 +6,7 @@ import { mkdir, readFile, rename } from 'node:fs/promises';
 import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { PDFDocument } from 'pdf-lib';
 import { dibujarCodigoArchivo } from './pdf/codigo-archivo';
+import { obtenerDirectorioUploads, prepararDirectorioUploads } from './config/archivo-almacenamiento';
 
 import { Archivo } from './entities/archivo.entity';
 import { Tramite } from '../../tramite/entities/tramite.entity';
@@ -36,7 +37,7 @@ export class ArchivoService {
       nombre: file.filename,
       codigo: randomUUID(),
       nombre_original: file.originalname,
-      ruta: file.path ?? `uploads/${file.filename}`,
+      ruta: file.path ? this.rutaParaPersistir(resolve(file.path)) : file.filename,
       tramite_id: null,
       estado: ArchivoEstado.PENDIENTE,
     });
@@ -54,7 +55,7 @@ export class ArchivoService {
         nombre: file.filename,
         codigo: randomUUID(),
         nombre_original: file.originalname,
-        ruta: file.path ?? `uploads/${file.filename}`,
+        ruta: file.path ? this.rutaParaPersistir(resolve(file.path)) : file.filename,
         tramite_id: null,
         estado: ArchivoEstado.PENDIENTE,
       }),
@@ -102,7 +103,8 @@ export class ArchivoService {
   }
 
   async prepararDirectoriosTramite(tramite: Tramite) {
-    const directorioTramite = this.construirDirectorioTramite(tramite);
+    const uploadsDir = await prepararDirectorioUploads();
+    const directorioTramite = this.construirDirectorioTramite(tramite, uploadsDir);
     const documentos = resolve(directorioTramite, 'documentos');
     const sellados = resolve(directorioTramite, 'sellados');
 
@@ -115,23 +117,20 @@ export class ArchivoService {
   }
 
   resolverRutaFisica(archivo: Archivo): string {
-    const uploadsDir = this.obtenerDirectorioUploads();
-    const ruta = archivo.ruta
-      ? isAbsolute(archivo.ruta)
-        ? resolve(archivo.ruta)
-        : resolve(process.cwd(), archivo.ruta)
-      : resolve(uploadsDir, archivo.nombre);
-    const rutaRelativa = relative(uploadsDir, ruta);
-
-    if (rutaRelativa.startsWith('..') || isAbsolute(rutaRelativa)) {
-      throw new BadRequestException('La ruta del archivo no es válida');
-    }
-
+    const uploadsDir = obtenerDirectorioUploads();
+    // Los registros anteriores usaban rutas relativas al backend con el prefijo uploads/.
+    const rutaGuardada = (archivo.ruta || archivo.nombre).replace(/\\/g, '/');
+    const ruta = resolve(uploadsDir, rutaGuardada.replace(/^uploads\//, ''));
+    this.rutaParaPersistir(ruta);
     return ruta;
   }
 
   rutaParaPersistir(rutaAbsoluta: string): string {
-    return relative(process.cwd(), rutaAbsoluta).split(sep).join('/');
+    const ruta = relative(obtenerDirectorioUploads(), rutaAbsoluta);
+    if (!ruta || ruta === '..' || ruta.startsWith(`..${sep}`) || isAbsolute(ruta)) {
+      throw new BadRequestException('La ruta del archivo no es válida');
+    }
+    return ruta.split(sep).join('/');
   }
 
   async prepararEntrega(archivo: Archivo) {
@@ -174,21 +173,6 @@ export class ArchivoService {
 
     return await this.archivoRepository.save(archivo);
   }
-
-
-
-  // async update(file: UploadedFileType, tramite: Tramite) {
-  //   if (tramite.archivos && tramite.archivos.length > 0) {
-  //     const archivoExistente = tramite.archivos[0];
-  //     archivoExistente.nombre = file.filename;
-  //     archivoExistente.nombre_original = file.originalname;
-  //     archivoExistente.ruta = `uploads/${file.filename}`;
-
-  //     return await this.archivoRepository.save(archivoExistente);
-  //   }
-  //   return await this.create(file, tramite);
-  // }
-
   async findAll(currentUser: Usuario) {
     const institucionId = obtenerInstitucionRestringida(currentUser);
     return await this.archivoRepository.find({
@@ -266,21 +250,17 @@ export class ArchivoService {
     archivo.ruta = this.rutaParaPersistir(rutaDestino);
   }
 
-  private construirDirectorioTramite(tramite: Tramite): string {
+  private construirDirectorioTramite(tramite: Tramite, uploadsDir: string): string {
     const identificador = this.sanitizarNombreDirectorio(
       `${tramite.id}-${tramite.codigo_tramite}`,
     );
 
     return resolve(
-      this.obtenerDirectorioUploads(),
+      uploadsDir,
       'tramites',
       String(tramite.gestion),
       identificador,
     );
-  }
-
-  private obtenerDirectorioUploads(): string {
-    return resolve(process.cwd(), 'uploads');
   }
 
   private sanitizarNombreDirectorio(valor: string): string {

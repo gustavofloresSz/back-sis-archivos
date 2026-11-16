@@ -2,8 +2,7 @@ import {Body,Controller,Delete,Get,Param,ParseIntPipe,Patch,Post,Query,UploadedF
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'node:crypto';
-import { mkdir } from 'node:fs/promises';
-import { extname, resolve } from 'node:path';
+import { extname } from 'node:path';
 import { PermissionProtected, UserRequest } from '../../auth/decorators';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { RecursoPermiso } from '../../usuarios/permiso/enums/recurso-permiso.enum';
@@ -12,6 +11,7 @@ import {
   CANTIDAD_MAXIMA_ARCHIVOS_TRAMITE,
   filtrarArchivoTramite,
 } from '../documentos/archivo/config/archivo-upload.config';
+import { prepararDirectorioUploads } from '../documentos/archivo/config/archivo-almacenamiento';
 import { CambiarEstadoTramiteDto } from './dto/cambiar-estado-tramite.dto';
 import { CreateTramiteDto } from './dto/create-tramite.dto';
 import { GestionarTramiteDto } from './dto/gestionar-tramite.dto';
@@ -24,11 +24,9 @@ const crearInterceptorArchivosTramite = () =>
     fileFilter: filtrarArchivoTramite,
     storage: diskStorage({
       destination: (_request, _file, callback) => {
-        const uploadsDir = resolve(process.cwd(), 'uploads');
-
-        mkdir(uploadsDir, { recursive: true })
-          .then(() => callback(null, uploadsDir))
-          .catch((error: Error) => callback(error, uploadsDir));
+        prepararDirectorioUploads()
+          .then(uploadsDir => callback(null, uploadsDir))
+          .catch((error: Error) => callback(error, ''));
       },
       filename: (_request, file, callback) => {
         const extension = extname(file.originalname)

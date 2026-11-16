@@ -4,8 +4,18 @@ Este backend se ejecuta junto con `front_corregido_tr`.
 
 ## Configuración
 
-En `.env`, configurar `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`,
+Crear `.env` en la raíz del backend (se puede usar la plantilla local
+`.env.example` si está disponible) y completar `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`,
 `DB_NAME` y `jwt_key`. `PORT` es opcional y utiliza 3000 por defecto.
+
+`UPLOADS_DIR` es opcional. Sin configurarlo se usa `uploads` dentro del
+directorio de trabajo del backend. Para usar otro disco o un servidor de
+archivos institucional, monta el almacenamiento en el sistema operativo y
+configura la ruta absoluta de esa carpeta, por ejemplo
+`UPLOADS_DIR=/mnt/archivos-tramites`. La carpeta configurada debe existir,
+estar accesible para lectura y escritura y estar montada antes de iniciar el
+backend. Configura el servicio para depender del montaje si el destino es
+remoto. La ruta configurada no se crea automáticamente.
 Para esta institución, utilizar una base de datos propia o una copia de la
 anterior: editar esta carpeta no separa automáticamente los datos de PostgreSQL.
 
@@ -30,8 +40,8 @@ Las dependencias se instalan con `npm ci` en cada carpeta. Para compilar el
 backend, ejecutar `npm run build`; para sus pruebas, `npm test -- --runInBand`.
 Para comprobar el frontend en desarrollo, ejecutar
 `node node_modules/@angular/cli/bin/ng.js build --configuration=development`
-desde su carpeta. La compilación de producción conserva el presupuesto de
-1 MB del proyecto base, que el conjunto actual de pantallas supera.
+desde su carpeta. Para compilar el frontend para producción, ejecutar
+`npm run build` en el frontend.
 La configuración actual del backend conserva `synchronize: true`; al iniciarlo,
 TypeORM puede actualizar el esquema de la base configurada.
 

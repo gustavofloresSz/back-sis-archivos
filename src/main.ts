@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { prepararDirectorioUploads } from './modules/gestion-tramites/documentos/archivo/config/archivo-almacenamiento';
 
 async function bootstrap() {
+  await prepararDirectorioUploads();
   const app = await NestFactory.create(AppModule);
   app.enableCors();//hace que sea seguro el ingreso
 

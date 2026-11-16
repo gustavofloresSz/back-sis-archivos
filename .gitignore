@@ -9,15 +9,8 @@ uploads/
 # Copias locales de datos y documentos antes de limpiezas
 /.backups/
 
-# Datos y scripts de operación local. Los scripts ya versionados siguen en Git.
-/scripts/catalogos/
-/scripts/importaciones/
-/scripts/actualizar-nombres-instituciones.sql
-/scripts/ajustar-roles-y-control-fisico.js
-/scripts/limpiar-tramites.js
-/scripts/registrar-equipo-tecnico.js
-/scripts/**/*.xlsx
-/scripts/**/*.xls
+# Scripts y datos de operación local.
+/scripts/
 
 # Logs
 logs
@@ -54,7 +47,6 @@ lerna-debug.log*
 # dotenv environment variable files
 .env
 .env.*
-!.env.example
 
 # temp directory
 /.temp/

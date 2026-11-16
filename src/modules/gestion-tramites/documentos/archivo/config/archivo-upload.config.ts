@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import type { Request } from 'express';
 import { extname } from 'node:path';
 
-export const CANTIDAD_MAXIMA_ARCHIVOS_TRAMITE = 30;
+export const CANTIDAD_MAXIMA_ARCHIVOS_TRAMITE = 20;
 
 const MIME_POR_EXTENSION: Record<string, readonly string[]> = {
   '.pdf': ['application/pdf'],

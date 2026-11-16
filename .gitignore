@@ -11,6 +11,7 @@ uploads/
 
 # Scripts y datos de operación local.
 /scripts/
+/INICIO_LOCAL.md
 
 # Logs
 logs

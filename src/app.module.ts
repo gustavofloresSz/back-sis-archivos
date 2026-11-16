@@ -27,7 +27,7 @@ import { ControlFisicoModule } from './modules/control-fisico/control-fisico.mod
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: true, // solo desarrollo
+      synchronize: false,
 
     }),
     AuthModule,

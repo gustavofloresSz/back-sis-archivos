@@ -23,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const { userId } = payload;
     const userDB = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['institucion', 'rol', 'rol.permisos'],
+      relations: { institucion: true, rol: { permisos: true } },
     });
     if (!userDB) throw new UnauthorizedException('Token invalido, vuelva a iniciar sesion');
     if (!userDB.estado) {

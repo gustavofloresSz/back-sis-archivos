@@ -102,7 +102,7 @@ export class TipoTramiteService {
   async remove(id: number) {
     const tipoTramite = await this.tipoTramiteRepository.findOne({
       where: { id },
-      relations: ['tramites'],
+      relations: { tramites: true },
     });
 
     if (!tipoTramite) {

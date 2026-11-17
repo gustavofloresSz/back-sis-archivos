@@ -10,6 +10,8 @@ import { PermisoModule } from './modules/usuarios/permiso/permiso.module';
 import { GestionTramitesModule } from './modules/gestion-tramites/gestion-tramites.module';
 import { OrganizacionModule } from './modules/organizacion/organizacion.module';
 import { ControlFisicoModule } from './modules/control-fisico/control-fisico.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'node:path';
 
 
 @Module({
@@ -29,6 +31,9 @@ import { ControlFisicoModule } from './modules/control-fisico/control-fisico.mod
       autoLoadEntities: true,
       synchronize: false,
 
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
     }),
     AuthModule,
     UsuariosModule,

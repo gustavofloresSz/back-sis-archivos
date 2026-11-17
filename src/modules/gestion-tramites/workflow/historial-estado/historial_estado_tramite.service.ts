@@ -42,11 +42,12 @@ export class HistorialEstadoTramiteService {
                 usuario_registro: { institucion_id: institucionId },
               },
             },
-      relations: [
-        'tramite',
-        'usuario',
-        'estado_anterior',
-        'estado_nuevo'],
+      relations: {
+        tramite: true,
+        usuario: true,
+        estado_anterior: true,
+        estado_nuevo: true,
+      },
       order: { id: 'DESC' }
     });
   }
@@ -63,12 +64,12 @@ export class HistorialEstadoTramiteService {
                 usuario_registro: { institucion_id: institucionId },
               },
             },
-      relations: [
-        'tramite',
-        'usuario',
-        'estado_anterior',
-        'estado_nuevo'
-      ]
+      relations: {
+        tramite: true,
+        usuario: true,
+        estado_anterior: true,
+        estado_nuevo: true,
+      }
     });
     if (!item) throw new NotFoundException('Historial no encontrado');
     return item;

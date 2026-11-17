@@ -8,6 +8,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();//hace que sea seguro el ingreso
 
+  app.setGlobalPrefix('api'); //para que todas las rutas tengan el prefijo api, ejemplo: http://localhost:3000/api/usuarios
+
   //esta config de useglobalpipes es para validar lo que envia el cliente, segun los dto
   app.useGlobalPipes(
     new ValidationPipe({ 

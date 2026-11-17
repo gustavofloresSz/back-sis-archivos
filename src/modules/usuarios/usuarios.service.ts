@@ -65,7 +65,7 @@ export class UsuariosService {
       where: esAdministradorGeneral(currentUser)
         ? {}
         : { institucion_id: currentUser.institucion_id },
-      relations: ['institucion', 'rol', 'rol.permisos'],
+      relations: { institucion: true, rol: { permisos: true } },
       order: { id: 'ASC' },
     });
   }
@@ -184,7 +184,7 @@ export class UsuariosService {
     this.validarPermisosActualizacion(dto, currentUser);
     const usuario = await this.userRepository.findOne({
       where: { id },
-      relations: ['rol', 'rol.permisos'],
+      relations: { rol: { permisos: true } },
     });
 
     if (!usuario) {
@@ -248,7 +248,7 @@ export class UsuariosService {
     await this.userRepository.save(usuario);
     return this.userRepository.findOne({
       where: { id },
-      relations: ['institucion', 'rol', 'rol.permisos'],
+      relations: { institucion: true, rol: { permisos: true } },
     });
   }
 

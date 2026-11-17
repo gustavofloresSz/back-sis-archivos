@@ -22,7 +22,6 @@ export class ArchivoCleanupService  {
     // Elimina archivos pendientes o huérfanos con más de un día de antigüedad.
     @Cron('0 2 * * *')
     async limpiarArchivosNoAsociados() {
-        this.logger.log('Iniciando limpieza de archivos no asociados...');
         await prepararDirectorioUploads();
         const fechaLimite = new Date();
         fechaLimite.setDate(fechaLimite.getDate() - 1);
@@ -49,10 +48,6 @@ export class ArchivoCleanupService  {
         }
 
         await this.archivoRepository.remove(archivo);
-        }
-
-        if (archivos.length > 0) {
-        this.logger.log(`Archivos no asociados eliminados: ${archivos.length}`);
         }
     }
 }

@@ -48,7 +48,7 @@ export class ComprobantePagoService {
                 usuario_registro: { institucion_id: institucionId },
               },
             },
-      relations: ['tramite'],
+      relations: { tramite: true },
       order: { id: 'DESC' }
     });
   }
@@ -65,7 +65,7 @@ export class ComprobantePagoService {
                 usuario_registro: { institucion_id: institucionId },
               },
             },
-      relations: ['tramite'],
+      relations: { tramite: true },
     });
     if (!item) throw new NotFoundException('Comprobante no encontrado');
     return item;

@@ -78,11 +78,9 @@ export class UbicacionFisicaService {
                 ambiente_fisico: { institucion_id: institucionId },
               },
             },
-      relations: [
-        'estante_fisico',
-        'estante_fisico.ambiente_fisico',
-        'estante_fisico.ambiente_fisico.institucion',
-      ],
+      relations: {
+        estante_fisico: { ambiente_fisico: { institucion: true } },
+      },
       order: { id: 'DESC' },
     });
 
@@ -126,11 +124,9 @@ export class UbicacionFisicaService {
                 ambiente_fisico: { institucion_id: institucionId },
               },
             },
-      relations: [
-        'estante_fisico',
-        'estante_fisico.ambiente_fisico',
-        'estante_fisico.ambiente_fisico.institucion',
-      ],
+      relations: {
+        estante_fisico: { ambiente_fisico: { institucion: true } },
+      },
     });
 
     if (!item) {

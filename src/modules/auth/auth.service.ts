@@ -48,7 +48,7 @@ export class AuthService {
   async checkAuthStatus(userId: number) {
     const userDB = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['institucion', 'rol', 'rol.permisos'],
+      relations: { institucion: true, rol: { permisos: true } },
     });
     if (!userDB) throw new UnauthorizedException();
     return { 
